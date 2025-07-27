@@ -58,3 +58,22 @@ def generate_QR(data: str) -> bytes:
 
     # Return its byte content
     return byte_arr.getvalue()
+
+# Define the endpoint
+@app.get("/generate-qr-code")
+async def get_QR_code(data: str):
+    '''
+    Generates and returns a QR code image based on the provided data
+    Args : 
+        data (str) : hex string information to encode within the QR Code
+    Returns : 
+        bytes : they PNG image data representing the QR Code
+    Raises : 
+        HTTPException: If the input data is invalid or empty
+    '''
+
+    # Check if data parameter is empty
+    if not data:
+        # Raise 400 status code HTTP Exception
+        raise HTTPException(status_code = 400, detail = "'data' query parameter cannot be empty.")
+    
