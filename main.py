@@ -10,6 +10,7 @@ import qrcode
 
 # To work with files as Objects
 from io import BytesIO
+import io
 
 
 # Create the instance of FastAPI App
@@ -76,4 +77,17 @@ async def get_QR_code(data: str):
     if not data:
         # Raise 400 status code HTTP Exception
         raise HTTPException(status_code = 400, detail = "'data' query parameter cannot be empty.")
+    
+    try:
+        # Get the QR Code
+        qr_image_bytes = generate_QR(data)
+
+        # Wrap the raw bytes data representing a PNG into BytesIO Object
+        # This creates an in-memory binary stream
+        # Then stream the content of the binary stream back to the client as HTTP Response
+        return StreamingResponse(io.BytesIO(qr_image_bytes), media_type="image/png")
+    
+    except Exception as e:
+        print(f"Error generating QR Code : {e}")
+        raise HTTPException(status_code = 500, detail = "Failed to generate a QR code image.")
     
