@@ -11,3 +11,12 @@ import qrcode
 # To work with files as Objects
 from io import BytesIO
 
+
+# Create the instance of FastAPI App
+app = FastAPI()
+
+def generate_QR(data: str) -> bytes:
+    '''
+    The function takes in a hex-string and expected to return a sequence of bytes
+    The byte data here represents the generated QR Code as (PNG Format)
+    '''
