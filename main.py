@@ -46,3 +46,7 @@ def generate_QR(data: str) -> bytes:
     # Construct the QR matrix and fit the content
     # fit = True ensures the best fit size automatically
     QR.make(fit=True)
+    
+    # Black squares + white background spaces
+    # Convert to RGB to provide support for image processing comapatibility
+    qr_image = QR.make_image(fill_color="black", back_color="white").convert('RGB')
