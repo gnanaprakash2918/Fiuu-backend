@@ -39,3 +39,10 @@ def generate_QR(data: str) -> bytes:
         box_size = 10,
         border = 4
     )
+    
+    # Add the payload data to the object
+    QR.add_data(data)
+
+    # Construct the QR matrix and fit the content
+    # fit = True ensures the best fit size automatically
+    QR.make(fit=True)
