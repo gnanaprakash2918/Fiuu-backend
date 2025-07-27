@@ -17,6 +17,25 @@ app = FastAPI()
 
 def generate_QR(data: str) -> bytes:
     '''
-    The function takes in a hex-string and expected to return a sequence of bytes
-    The byte data here represents the generated QR Code as (PNG Format)
+    Generate a QR code image as PNG bytes from input hex string data
+    Args : 
+        data (str) : hex string information to encode within the QR Code
+    Returns : 
+        bytes : they PNG image data representing the QR Code
+    Raises : 
+        ValueError: If the input data is invalid or empty
     '''
+
+    # Intialize the QR Object for generating the QR Code
+    '''
+    version : Integer parameter from 1 to 40 to control the QR Size, 1 being the 21 x 21 matrix
+    error_correction : controls error correction for QR (inserts redudant data to recover QR if lost) - L (7% can be corrected)
+    box_size : pixel size of each QR dot
+    border : thickness of the border in boxes
+    '''
+    QR = qrcode.QRCode(
+        version = 1,
+        error_correction = qrcode.constants.ERROR_CORRECT_L, 
+        box_size = 10,
+        border = 4
+    )
