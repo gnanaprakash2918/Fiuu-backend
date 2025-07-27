@@ -49,4 +49,12 @@ def generate_QR(data: str) -> bytes:
     
     # Black squares + white background spaces
     # Convert to RGB to provide support for image processing comapatibility
+    # Image itself is Black and white
     qr_image = QR.make_image(fill_color="black", back_color="white").convert('RGB')
+
+    # Create a byte array object and save the QR image in PNG format
+    byte_arr = BytesIO()
+    qr_image.save(byte_arr, format='PNG')
+
+    # Return its byte content
+    return byte_arr.getvalue()
