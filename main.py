@@ -91,3 +91,6 @@ async def get_QR_code(data: str):
         print(f"Error generating QR Code : {e}")
         raise HTTPException(status_code = 500, detail = "Failed to generate a QR code image.")
     
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host = "0.0.0.0", port = 8080)
