@@ -5,6 +5,9 @@ from fastapi import FastAPI, HTTPException
 # In this the QR image
 from fastapi.responses import StreamingResponse
 
+# Normal response, if client doesn't support streaming response
+# from fastapi.responses import Response
+
 # To generate QR Code from the hex string
 import qrcode
 
@@ -84,6 +87,10 @@ async def get_QR_code(data: str):
 
         # Wrap the raw bytes data representing a PNG into BytesIO Object
         # This creates an in-memory binary stream
+
+        # If client doesn't support streaming respone, use this
+        # return Response(content=qr_image_bytes, media_type="image/png")
+
         # Then stream the content of the binary stream back to the client as HTTP Response
         return StreamingResponse(io.BytesIO(qr_image_bytes), media_type="image/png")
     
@@ -92,5 +99,6 @@ async def get_QR_code(data: str):
         raise HTTPException(status_code = 500, detail = "Failed to generate a QR code image.")
     
 if __name__ == "__main__":
+    # python -m uvicorn main:app --reload
     import uvicorn
     uvicorn.run(app, host = "0.0.0.0", port = 8080)
