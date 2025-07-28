@@ -121,6 +121,7 @@ def generate_qr(amount: float) -> bytes:
         "storeId": store_id,
         "terminalId": terminal_id,
         "version": version,        
+
         # Optional/empty fields from Postman pre-request logic
         "businessDate": "",
         "description": "",
@@ -157,10 +158,6 @@ def generate_qr(amount: float) -> bytes:
         # Parse the response JSON
         try:
             response_data = response.json()
-            # Write respone to a file optionally
-            import json
-            with open('dataf.json', 'w') as f:
-                json.dump(response_data, f)
         
         except ValueError:
             return {"error": "Invalid JSON from FIUU API", "raw": response.text}
