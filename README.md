@@ -1,4 +1,4 @@
-# 🚀 FIUU QR Payment Generator – FastAPI Integration
+# FIUU QR Payment Generator – FastAPI Integration
 
 A simple FastAPI service to generate **DuitNow QR codes** using the **FIUU Payment Gateway**. This service generates a secure HMAC-SHA256 signature, makes a request to the FIUU API, and streams back the QR image as a response.
 
