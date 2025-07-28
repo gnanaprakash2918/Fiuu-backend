@@ -54,6 +54,7 @@ def generate_unique_reference_id():
     random_num = random.randint(1000, 9999)  
     return f"REF{timestamp}{random_num}"
 
+# Helper function : Generate QR via FIUU API
 def generate_QR(data: str) -> bytes:
     '''
     Generate a QR code image as PNG bytes from input hex string data
@@ -110,6 +111,11 @@ async def get_QR_code(data: str):
     Raises : 
         HTTPException: If the input data is invalid or empty
     '''
+
+    # Load up the env variables
+    application_code = os.getenv("OPA_APP_CODE")  or "<your_app_code>"
+    secret_key = os.getenv("OPA_SECRET_KEY") or "<your_secret_key>"
+
 
     # Check if data parameter is empty
     if not data:
