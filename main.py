@@ -132,8 +132,23 @@ async def get_QR_code(amount: float):
 
     # Required by the api to hash it with hmac-sha256 algorithm
     hash_type = "hmac-sha256"
+
     # Get a unique reference id for the transaction
     reference_id = generate_unique_reference_id()
+
+    # Construct parameters required by FIUU
+    params = {
+        # Cast amount to string
+        "amount": str(amount),
+        "applicationCode": application_code,
+        "channelId": channel_id,
+        "currencyCode": currency_code,
+        "hashType": hash_type,
+        "referenceId": reference_id,
+        "storeId": store_id,
+        "terminalId": terminal_id,
+        "version": version
+    }
 
     try:
         # Get the QR Code
