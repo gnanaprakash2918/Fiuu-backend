@@ -123,6 +123,18 @@ async def get_QR_code(amount: float):
         # Raise 400 status code HTTP Exception
         raise HTTPException(status_code = 400, detail = "'amount' query parameter cannot be empty.")
     
+    # Standard fixed values
+    version = "V3"
+    channel_id = "24"
+    currency_code = "MYR"
+    store_id = "nextmachines01"
+    terminal_id = "1"
+
+    # Required by the api to hash it with hmac-sha256 algorithm
+    hash_type = "hmac-sha256"
+    # Get a unique reference id for the transaction
+    reference_id = generate_unique_reference_id()
+
     try:
         # Get the QR Code
         qr_image_bytes = generate_QR(data)
