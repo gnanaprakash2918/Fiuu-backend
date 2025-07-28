@@ -8,6 +8,14 @@ from fastapi.responses import StreamingResponse
 # Normal response, if client doesn't support streaming response
 # from fastapi.responses import Response
 
+# Python is dynamically typed so to avoid surprises
+# Adding Pydantic to fix a predefined schema
+# This allows us to write contrainsts and ensure its conforms to it
+from pydantic import BaseModel
+
+# To work with hitting endpoints
+import requests
+
 # To generate QR Code from the hex string
 import qrcode
 
@@ -15,6 +23,18 @@ import qrcode
 from io import BytesIO
 import io
 
+# To deal with generating unique references and hashing
+import hashlib
+import hmac
+import time
+import random
+
+# To read and load environment files
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Create the instance of FastAPI App
 app = FastAPI()
