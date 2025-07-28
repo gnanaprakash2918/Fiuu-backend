@@ -44,6 +44,16 @@ class QRRequest(BaseModel):
     # Payment amount to generate QR for
     amount: float  
 
+# Helper function : Generate unique reference ID
+# Format: REF<timestamp><4-digit-random-number>
+# Example: REF17221358481234
+def generate_unique_reference_id():
+    # Current Unix time
+    timestamp = int(time.time())  
+    # 4-digit random number
+    random_num = random.randint(1000, 9999)  
+    return f"REF{timestamp}{random_num}"
+
 def generate_QR(data: str) -> bytes:
     '''
     Generate a QR code image as PNG bytes from input hex string data
