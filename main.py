@@ -39,6 +39,11 @@ load_dotenv()
 # Create the instance of FastAPI App
 app = FastAPI()
 
+# Request Model for /generate-qr endpoint
+class QRRequest(BaseModel):
+    # Payment amount to generate QR for
+    amount: float  
+
 def generate_QR(data: str) -> bytes:
     '''
     Generate a QR code image as PNG bytes from input hex string data
