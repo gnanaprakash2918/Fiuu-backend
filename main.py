@@ -100,12 +100,12 @@ def generate_QR(data: str) -> bytes:
     return byte_arr.getvalue()
 
 # Define the endpoint
-@app.get("/generate-qr-code")
-async def get_QR_code(data: str):
+@app.get("/generate-qr")
+async def get_QR_code(amount: float):
     '''
     Generates and returns a QR code image based on the provided data
     Args : 
-        data (str) : hex string information to encode within the QR Code
+        float: the amount to paid
     Returns : 
         bytes : they PNG image data representing the QR Code
     Raises : 
@@ -113,14 +113,15 @@ async def get_QR_code(data: str):
     '''
 
     # Load up the env variables
+    # Ensure there are fallbacks setup so we don't end up with None
     application_code = os.getenv("OPA_APP_CODE")  or "<your_app_code>"
     secret_key = os.getenv("OPA_SECRET_KEY") or "<your_secret_key>"
 
 
     # Check if data parameter is empty
-    if not data:
+    if not amount:
         # Raise 400 status code HTTP Exception
-        raise HTTPException(status_code = 400, detail = "'data' query parameter cannot be empty.")
+        raise HTTPException(status_code = 400, detail = "'amount' query parameter cannot be empty.")
     
     try:
         # Get the QR Code
