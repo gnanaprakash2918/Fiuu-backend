@@ -33,6 +33,9 @@ import random
 import os
 from dotenv import load_dotenv
 
+# uuid for Reference number generation
+import uuid
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -44,15 +47,12 @@ class QRRequest(BaseModel):
     # Payment amount to generate QR for
     amount: float  
 
-# Helper function : Generate unique reference ID
-# Format: REF<timestamp><4-digit-random-number>
-# Example: REF17221358481234
+# Helper function : Generate unique reference ID using UUID4
+# Format: REF<UUID> (without hyphens)
+# Example: REF550e8400e29b41d4a716446655440000
 def generate_unique_reference_id():
-    # Current Unix time
-    timestamp = int(time.time())  
-    # 4-digit random number
-    random_num = random.randint(1000, 9999)  
-    return f"REF{timestamp}{random_num}"
+    return f"REF{uuid.uuid4().hex.upper()}"
+
 
 # Helper Function : Generate HMAC-SHA256 Signature
 def generate_signature(params: dict, secret_key: str) -> str:
@@ -121,6 +121,7 @@ def generate_qr(amount: float) -> bytes:
         "storeId": store_id,
         "terminalId": terminal_id,
         "version": version,        
+
         # Optional/empty fields from Postman pre-request logic
         "businessDate": "",
         "description": "",
@@ -157,10 +158,6 @@ def generate_qr(amount: float) -> bytes:
         # Parse the response JSON
         try:
             response_data = response.json()
-            # Write respone to a file optionally
-            import json
-            with open('dataf.json', 'w') as f:
-                json.dump(response_data, f)
         
         except ValueError:
             return {"error": "Invalid JSON from FIUU API", "raw": response.text}
