@@ -117,7 +117,10 @@ async def get_QR_code(amount: float):
     application_code = os.getenv("OPA_APP_CODE")  or "<your_app_code>"
     secret_key = os.getenv("OPA_SECRET_KEY") or "<your_secret_key>"
 
-
+    # If they application_code or secret_key is not set, raise 500 exception
+    if not application_code or not secret_key:
+         raise HTTPException(status_code = 500, detail = "Merchant credentials not set")
+    
     # Check if data parameter is empty
     if not amount:
         # Raise 400 status code HTTP Exception
@@ -137,7 +140,7 @@ async def get_QR_code(amount: float):
     reference_id = generate_unique_reference_id()
 
     # Construct parameters required by FIUU
-    params = {
+    payload = {
         # Cast amount to string
         "amount": str(amount),
         "applicationCode": application_code,
@@ -149,6 +152,19 @@ async def get_QR_code(amount: float):
         "terminalId": terminal_id,
         "version": version
     }
+    
+    # Sanitize / Sort keys from payload dictionary
+    sorted_keys = sorted(payload.keys())
+
+    # Go through every key in sorted keys and concat them to a string
+    # this is required to generate the hash
+    concat_str = ''.join(payload[k] for k in sorted_keys)
+
+    # Generate the HMAC-SHA256 Signature using sorted param values
+    signature = hmac.new(secret_key.encode(), concat_str.encode(), hashlib.sha256).hexdigest()
+
+    # Add generated Hmac to the payload
+    payload["signature"] = signature
 
     try:
         # Get the QR Code
