@@ -54,64 +54,39 @@ def generate_unique_reference_id():
     random_num = random.randint(1000, 9999)  
     return f"REF{timestamp}{random_num}"
 
+# Helper Function : Generate HMAC-SHA256 Signature
+def generate_signature(params: dict, secret_key: str) -> str:
+    # Sanitize and fill missing fields with empty string for consistent hashing
+    full_params = {
+        "amount": params.get("amount", ""),
+        "applicationCode": params.get("applicationCode", ""),
+        "businessDate": params.get("businessDate", ""),
+        "channelId": params.get("channelId", ""),
+        "currencyCode": params.get("currencyCode", ""),
+        "description": params.get("description", ""),
+        "hashType": params.get("hashType", ""),
+        "imageFormat": params.get("imageFormat", ""),
+        "imageSize": params.get("imageSize", ""),
+        "referenceId": params.get("referenceId", ""),
+        "storeId": params.get("storeId", ""),
+        "terminalId": params.get("terminalId", ""),
+        "validityDuration": params.get("validityDuration", ""),
+        "metadata": params.get("metadata", ""),
+        "version": params.get("version", "")
+    }
+
+    # Sort keys and concatenate values
+    # Go through every key in sorted keys and concat them to a string
+    # this is required to generate the hash
+    # Generate the HMAC-SHA256 Signature using sorted param values
+    sorted_keys = sorted(full_params.keys())
+    concatenated = ''.join(full_params[k] for k in sorted_keys)
+
+    # Create HMAC SHA256 signature
+    return hmac.new(secret_key.encode(), concatenated.encode(), hashlib.sha256).hexdigest()
+
 # Helper function : Generate QR via FIUU API
-def generate_QR(data: str) -> bytes:
-    '''
-    Generate a QR code image as PNG bytes from input hex string data
-    Args : 
-        data (str) : hex string information to encode within the QR Code
-    Returns : 
-        bytes : they PNG image data representing the QR Code
-    Raises : 
-        ValueError: If the input data is invalid or empty
-    '''
-
-    # Intialize the QR Object for generating the QR Code
-    '''
-    version : Integer parameter from 1 to 40 to control the QR Size, 1 being the 21 x 21 matrix
-    error_correction : controls error correction for QR (inserts redudant data to recover QR if lost) - L (7% can be corrected)
-    box_size : pixel size of each QR dot
-    border : thickness of the border in boxes
-    '''
-    QR = qrcode.QRCode(
-        version = 1,
-        error_correction = qrcode.constants.ERROR_CORRECT_L, 
-        box_size = 10,
-        border = 4
-    )
-    
-    # Add the payload data to the object
-    QR.add_data(data)
-
-    # Construct the QR matrix and fit the content
-    # fit = True ensures the best fit size automatically
-    QR.make(fit=True)
-    
-    # Black squares + white background spaces
-    # Convert to RGB to provide support for image processing comapatibility
-    # Image itself is Black and white
-    qr_image = QR.make_image(fill_color="black", back_color="white").convert('RGB')
-
-    # Create a byte array object and save the QR image in PNG format
-    byte_arr = BytesIO()
-    qr_image.save(byte_arr, format='PNG')
-
-    # Return its byte content
-    return byte_arr.getvalue()
-
-# Define the endpoint
-@app.get("/generate-qr")
-async def get_QR_code(amount: float):
-    '''
-    Generates and returns a QR code image based on the provided data
-    Args : 
-        float: the amount to paid
-    Returns : 
-        bytes : they PNG image data representing the QR Code
-    Raises : 
-        HTTPException: If the input data is invalid or empty
-    '''
-
+def generate_qr(amount: float) -> bytes:
     # Load up the env variables
     # Ensure there are fallbacks setup so we don't end up with None
     application_code = os.getenv("OPA_APP_CODE")  or "<your_app_code>"
@@ -120,11 +95,6 @@ async def get_QR_code(amount: float):
     # If they application_code or secret_key is not set, raise 500 exception
     if not application_code or not secret_key:
          raise HTTPException(status_code = 500, detail = "Merchant credentials not set")
-    
-    # Check if data parameter is empty
-    if not amount:
-        # Raise 400 status code HTTP Exception
-        raise HTTPException(status_code = 400, detail = "'amount' query parameter cannot be empty.")
     
     # Standard fixed values
     version = "V3"
@@ -140,9 +110,9 @@ async def get_QR_code(amount: float):
     reference_id = generate_unique_reference_id()
 
     # Construct parameters required by FIUU
-    payload = {
+    params = {
         # Cast amount to string
-        "amount": str(amount),
+        "amount": f"{amount:.2f}",
         "applicationCode": application_code,
         "channelId": channel_id,
         "currencyCode": currency_code,
@@ -150,40 +120,97 @@ async def get_QR_code(amount: float):
         "referenceId": reference_id,
         "storeId": store_id,
         "terminalId": terminal_id,
-        "version": version
+        "version": version,        
+        # Optional/empty fields from Postman pre-request logic
+        "businessDate": "",
+        "description": "",
+        "imageFormat": "",
+        "imageSize": "",
+        "validityDuration": "",
+        "metadata": ""
     }
-    
-    # Sanitize / Sort keys from payload dictionary
-    sorted_keys = sorted(payload.keys())
 
-    # Go through every key in sorted keys and concat them to a string
-    # this is required to generate the hash
-    concat_str = ''.join(payload[k] for k in sorted_keys)
-
-    # Generate the HMAC-SHA256 Signature using sorted param values
-    signature = hmac.new(secret_key.encode(), concat_str.encode(), hashlib.sha256).hexdigest()
-
-    # Add generated Hmac to the payload
+    signature = generate_signature(params, secret_key)
+    # Add generated HMAC to the payload
+    payload = params.copy()
     payload["signature"] = signature
 
+    # Set endpoint and headers
+    api_endpoint = "https://opa.fiuu.com/RMS/API/MOLOPA/precreate.php"
+    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+
     try:
-        # Get the QR Code
-        qr_image_bytes = generate_QR(data)
+        # Send the request to FIUU endpoint
+        response = requests.post(
+            api_endpoint, 
+            headers = headers, 
+            data = payload,
+            timeout = 10
+        )
 
-        # Wrap the raw bytes data representing a PNG into BytesIO Object
-        # This creates an in-memory binary stream
+        # If HTTP request failed
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code = response.status_code,
+                detail = f"FIUU API Error: {response.text}"
+            )
+        # Parse the response JSON
+        try:
+            response_data = response.json()
+            # Write respone to a file optionally
+            import json
+            with open('dataf.json', 'w') as f:
+                json.dump(response_data, f)
+        
+        except ValueError:
+            return {"error": "Invalid JSON from FIUU API", "raw": response.text}
 
-        # If client doesn't support streaming respone, use this
-        # return Response(content=qr_image_bytes, media_type="image/png")
-
-        # Then stream the content of the binary stream back to the client as HTTP Response
-        return StreamingResponse(io.BytesIO(qr_image_bytes), media_type="image/png")
+        # Return the response with empty string fallbacks
+        return {    
+            "qr_url": response_data.get("imageUrl", ""),
+            "transaction_id": response_data.get("molTransactionId", ""),
+            "status": response_data.get("statusCode", ""),
+            "amount": response_data.get("amount", ""),
+            "currency": response_data.get("currencyCode", "")
+        }
     
     except Exception as e:
         print(f"Error generating QR Code : {e}")
-        raise HTTPException(status_code = 500, detail = "Failed to generate a QR code image.")
+        raise HTTPException(
+            status_code = response.status_code,
+            detail = f"FIUU API Error: {response.text}"
+        )    
+    
+
+# Define the endpoint
+@app.post("/generate-qr")
+async def get_QR_code(request: QRRequest):
+    '''
+    Generates and returns a QR code image based on the provided data
+    Args : 
+        float: the amount to paid
+    Returns : 
+        JSON Response : Generated QR Link, transaction_id, status, amount, currency
+    Raises : 
+        HTTPException: If the input data is invalid or empty
+    '''
+    # Validate amount
+    # Check if data parameter is empty
+    if not request.amount:
+        # Raise 400 status code HTTP Exception
+        raise HTTPException(status_code = 400, detail = "'amount' query parameter cannot be empty.")
+    
+    if request.amount <= 0:
+        raise HTTPException(status_code = 400, detail = "Amount must be greater than 0")
+    
+    # Generate and return QR
+    result = generate_qr(request.amount)
+    img_data = requests.get(result["qr_url"]).content
+    return StreamingResponse(io.BytesIO(img_data), media_type="image/png")
+
     
 if __name__ == "__main__":
-    # python -m uvicorn main:app --reload
+    # python -m uvicorn main:app --host localhost --port 8000 --reload
+    # 127.0.0.1
     import uvicorn
     uvicorn.run(app, host = "0.0.0.0", port = 8080)
