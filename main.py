@@ -16,9 +16,6 @@ from pydantic import BaseModel
 # To work with hitting endpoints
 import requests
 
-# To generate QR Code from the hex string
-import qrcode
-
 # To work with files as Objects
 from io import BytesIO
 import io
@@ -26,8 +23,6 @@ import io
 # To deal with generating unique references and hashing
 import hashlib
 import hmac
-import time
-import random
 
 # To read and load environment files
 import os
