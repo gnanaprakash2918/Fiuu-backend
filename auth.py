@@ -47,4 +47,27 @@ def verify_password(plain, hashed):
     # Verify plain text password against a stored hash
     return pwd_context.verify(plain, hashed)
 
+# Auth user with username and password against the database
+def authenticate_user(db: Session, username: str, password: str):
+    # Query the database for the first user with the given username
+    user = db.query(User).filter(User.username == username).first()
 
+    if not user or not verify_password(password, user.hashed_password):
+        # No user found or password fails
+        return None
+    
+    # Return User ORM object if authentication is successful
+    return user
+
+def create_token(data: dict):
+    # encode data into JWT string
+    return jwt.encode(data, JWT_SECRET_KEY_128, algorithm=JWT_SIGNING_ALGORITHM)
+
+def decode_token(token: str):
+    # Try to decode the token using same secret and algorithm
+    try:
+        # successful => returns decoded payload as python dict
+        return jwt.decode(token, JWT_SECRET_KEY_128, algorithms=[JWT_SIGNING_ALGORITHM])
+    except JWTError:
+        # Decoding failed
+        raise HTTPException(status_code=401, detail="Invalid token")
