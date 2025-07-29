@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Load up env variables
-JWT_SECRET_KEY_128 = os.getenv("OPA_APP_CODE")  or "super-secret"
+JWT_SECRET_KEY_128 = os.getenv("JWT_SECRET_KEY")  or "super-secret"
 
 # JWT signing algorithm - HMAC SHA-256
 JWT_SIGNING_ALGORITHM = "HS256"

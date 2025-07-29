@@ -5,8 +5,12 @@ from pydantic import BaseModel
 class UserCreate(BaseModel):
     username: str
     password: str
+    company_name: str
+    address: str
+    phone : str
     application_code: str
     secret_key: str
+
 
 # Schema for User login authentication requests
 class UserLogin(BaseModel):
@@ -31,4 +35,5 @@ class DeviceOut(BaseModel):
     name: str
 
     class Config:
-        orm_mode = True
+        # 'orm_mode' has been renamed to 'from_attributes'
+        from_attributes = True
