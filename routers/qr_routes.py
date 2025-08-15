@@ -39,7 +39,11 @@ router = APIRouter()
 # Request Model for /generate-qr endpoint
 class QRRequest(BaseModel):
     # Payment amount to generate QR for
-    amount: float  
+    amount: float
+    # Application code to be sent from frontend
+    applicationCode: str
+    # Secret key to be sent from frontend
+    secretKey: str  
 
 # Helper function : Generate unique reference ID using UUID4
 # Format: REF<UUID> (without hyphens)
@@ -80,12 +84,7 @@ def generate_signature(params: dict, secret_key: str) -> str:
     return hmac.new(secret_key.encode(), concatenated.encode(), hashlib.sha256).hexdigest()
 
 # Helper function : Generate QR via FIUU API
-def generate_qr(amount: float) -> bytes:
-    # Load up the env variables
-    # Ensure there are fallbacks setup so we don't end up with None
-    application_code = os.getenv("OPA_APP_CODE")  or "<your_app_code>"
-    secret_key = os.getenv("OPA_SECRET_KEY") or "<your_secret_key>"
-
+def generate_qr(amount: float, application_code: str, secret_key: str) -> bytes:
     # If they application_code or secret_key is not set, raise 500 exception
     if not application_code or not secret_key:
          raise HTTPException(status_code = 500, detail = "Merchant credentials not set")
@@ -180,6 +179,8 @@ async def get_QR_code(request: QRRequest):
     Generates and returns a QR code image based on the provided data
     Args : 
         float: the amount to paid
+        str: applicationCode from frontend
+        str: secretKey from frontend
     Returns : 
         JSON Response : Generated QR Link, transaction_id, status, amount, currency
     Raises : 
@@ -195,6 +196,6 @@ async def get_QR_code(request: QRRequest):
         raise HTTPException(status_code = 400, detail = "Amount must be greater than 0")
     
     # Generate and return QR
-    result = generate_qr(request.amount)
+    result = generate_qr(request.amount, request.applicationCode, request.secretKey)
     img_data = requests.get(result["qr_url"]).content
     return StreamingResponse(io.BytesIO(img_data), media_type="image/png")
